@@ -8,6 +8,7 @@ type ObjectType string
 
 const (
 	NULL_OBJ         = "NULL"
+	ERROR_OBJ        = "ERROR"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	INTEGER_OBJ      = "INTEGER"
 	BOOLEAN_OBJ      = "BOOLEAN"
@@ -27,6 +28,19 @@ func (n *Null) Type() ObjectType {
 
 func (n *Null) Inspect() string {
 	return "null"
+}
+
+// Error
+type Error struct {
+	Message string
+}
+
+func (e *Error) Type() ObjectType {
+	return ERROR_OBJ
+}
+
+func (e *Error) Inspect() string {
+	return fmt.Sprintf("ERROR: %s", e.Message)
 }
 
 // Integer
