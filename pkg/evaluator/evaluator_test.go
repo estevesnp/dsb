@@ -293,11 +293,11 @@ if (10 > 1) {
 		},
 		{
 			"let func = fn(x) {}; func()",
-			"wrong arguments passed: expected 1, got 0",
+			"wrong number of arguments: expected 1, got 0",
 		},
 		{
 			"let func = fn() {}; func(0)",
-			"wrong arguments passed: expected 0, got 1",
+			"wrong number of arguments: expected 0, got 1",
 		},
 	}
 
@@ -385,4 +385,38 @@ let addTwo = newAdder(2);
 addTwo(2);`
 
 	testIntegerObject(t, testEval(input), 4)
+}
+
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{`len("")`, 0},
+		{`len("four")`, 4},
+		{`len("hello world")`, 11},
+		{`len(1)`, "argument to `len` not supported, got INTEGER"},
+		{`len("one", "two")`, "wrong number of arguments: expected 1, got 2"},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+
+		switch expected := tt.expected.(type) {
+
+		case int:
+			testIntegerObject(t, evaluated, int64(expected))
+
+		case string:
+			errObj, ok := evaluated.(*object.Error)
+			if !ok {
+				t.Errorf("object is not Error. got %T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if errObj.Message != expected {
+				t.Errorf("wrong error message. expected %q, got %q", expected, errObj.Message)
+			}
+		}
+	}
 }
