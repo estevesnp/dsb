@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/estevesnp/dsb/pkg/evaluator"
 	"github.com/estevesnp/dsb/pkg/lexer"
-	"github.com/estevesnp/dsb/pkg/token"
+	"github.com/estevesnp/dsb/pkg/parser"
 )
 
 const PROMPT = ">>  "
@@ -25,13 +26,27 @@ func Start(in io.Reader, out io.Writer) {
 
 		l := lexer.New(line)
 
-		for tok := l.NextToken(); tok.Type != token.EOF; tok = l.NextToken() {
-			fmt.Fprintln(out, formatToken(tok))
+		p := parser.New(l)
+
+		program := p.ParseProgram()
+
+		if len(p.Errors()) != 0 {
+			printParserErrors(out, p.Errors())
+			continue
 		}
-		fmt.Fprintln(out)
+
+		evaluated := evaluator.Eval(program)
+
+		if evaluated == nil {
+			continue
+		}
+
+		fmt.Fprintf(out, "%s\n", evaluated.Inspect())
 	}
 }
 
-func formatToken(tok token.Token) string {
-	return fmt.Sprintf("[ Type: %s | Literal: %s ]", tok.Type, tok.Literal)
+func printParserErrors(out io.Writer, errors []string) {
+	for _, msg := range errors {
+		fmt.Fprintf(out, "\t%s\n", msg)
+	}
 }
