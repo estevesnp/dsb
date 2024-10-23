@@ -12,8 +12,9 @@ const (
 	ILLEGAL = "ILLEGAL"
 
 	// Identifiers + Literals
-	IDENT = "IDENT"
-	INT   = "INT"
+	IDENT  = "IDENT"
+	INT    = "INT"
+	STRING = "STRING"
 
 	// Operators
 	ASSIGN   = "="

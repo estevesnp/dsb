@@ -51,6 +51,36 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	return true
 }
 
+func TestStringLiteral(t *testing.T) {
+	input := `"Hello World!"`
+	expected := "Hello World!"
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got %T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != expected {
+		t.Errorf("String is not %q, got %q", expected, str.Value)
+	}
+}
+
+func TestStringConcatenation(t *testing.T) {
+	input := `"Hello" + " " + "World!"`
+	expected := "Hello World!"
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got %T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != expected {
+		t.Errorf("String is not %q, got %q", expected, str.Value)
+	}
+}
+
 func testNullObject(t *testing.T, obj object.Object) bool {
 	if obj != NULL {
 		t.Errorf("object is not NULL. got %T", obj)
@@ -79,6 +109,16 @@ func TestEvalBooleanExpression(t *testing.T) {
 		{"1 >= 2", false},
 		{"1 <= 1", true},
 		{"1 >= 1", true},
+		{`"a" < "b"`, true},
+		{`"a" > "b"`, false},
+		{`"a" < "a"`, false},
+		{`"a" > "a"`, false},
+		{`"foo" == "foo"`, true},
+		{`"foo" == "bar"`, false},
+		{`"a" <= "b"`, true},
+		{`"a" >= "b"`, false},
+		{`"a" <= "a"`, true},
+		{`"a" >= "a"`, true},
 		{"1 + 1 == 2", true},
 		{" 4 * (1 - 4) >= -13", true},
 		{"true == true", true},
@@ -244,8 +284,20 @@ if (10 > 1) {
 			"unkown operator: BOOLEAN + BOOLEAN",
 		},
 		{
+			`"Hello" - "World"`,
+			"unkown operator: STRING - STRING",
+		},
+		{
 			"foobar",
 			"identifier not found: foobar",
+		},
+		{
+			"let func = fn(x) {}; func()",
+			"wrong arguments passed: expected 1, got 0",
+		},
+		{
+			"let func = fn() {}; func(0)",
+			"wrong arguments passed: expected 0, got 1",
 		},
 	}
 

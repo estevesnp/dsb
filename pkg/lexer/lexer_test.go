@@ -33,6 +33,9 @@ if (5 < 10) {
 4 <= 5;
 
 6 >= 6;
+
+"foobar"
+"foo bar"
 !`
 
 	tests := []struct {
@@ -139,6 +142,9 @@ if (5 < 10) {
 		{token.GT_EQ, ">="},
 		{token.INT, "6"},
 		{token.SEMICOLON, ";"},
+
+		{token.STRING, "foobar"},
+		{token.STRING, "foo bar"},
 
 		{token.BANG, "!"},
 		{token.EOF, ""},
