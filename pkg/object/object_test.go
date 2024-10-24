@@ -22,6 +22,21 @@ func TestStringHashKey(t *testing.T) {
 	}
 }
 
+func TestStringHashCache(t *testing.T) {
+	s := "foo"
+	str := &String{Value: s}
+
+	if _, ok := stringHashCache[s]; ok {
+		t.Fatalf("string hash cache for value %q should be empty", s)
+	}
+
+	str.HashKey()
+
+	if _, ok := stringHashCache[s]; !ok {
+		t.Fatalf("string hash cache for value %q should be filled", s)
+	}
+}
+
 func TestIntegerHashKey(t *testing.T) {
 	one1 := &Integer{Value: 1}
 	one2 := &Integer{Value: 1}

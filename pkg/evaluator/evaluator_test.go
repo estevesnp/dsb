@@ -51,6 +51,34 @@ func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool {
 	return true
 }
 
+func TestIntegerCache(t *testing.T) {
+	tests := []struct {
+		input        string
+		expectedSame bool
+	}{
+		{"-128", true},
+		{"128", true},
+		{"0", true},
+		{"1", true},
+		{"-1", true},
+		{"5", true},
+		{"-5", true},
+		{"-129", false},
+		{"129", false},
+		{"2024", false},
+	}
+
+	for _, tt := range tests {
+		firstInt := testEval(tt.input).(*object.Integer)
+		secondInt := testEval(tt.input).(*object.Integer)
+
+		if isSame := firstInt == secondInt; isSame != tt.expectedSame {
+			t.Errorf("expected object equality with value %d to be %t, was %t",
+				firstInt.Value, tt.expectedSame, isSame)
+		}
+	}
+}
+
 func TestStringLiteral(t *testing.T) {
 	input := `"Hello World!"`
 	expected := "Hello World!"

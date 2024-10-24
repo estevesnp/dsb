@@ -11,6 +11,8 @@ var (
 	NULL  = &object.Null{}
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
+
+	integerCache = map[int64]*object.Integer{}
 )
 
 var builtins = map[string]*object.Builtin{
@@ -53,7 +55,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	// Expressions
 
 	case *ast.IntegerLiteral:
-		return &object.Integer{Value: node.Value}
+		return createInteger(node.Value)
 
 	case *ast.Boolean:
 		return nativeBoolToBooleanObject(node.Value)
@@ -198,6 +200,21 @@ func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Obje
 	}
 }
 
+func createInteger(value int64) *object.Integer {
+	if value < -128 || 128 < value {
+		return &object.Integer{Value: value}
+	}
+
+	if integer, ok := integerCache[value]; ok {
+		return integer
+	}
+
+	integer := &object.Integer{Value: value}
+	integerCache[value] = integer
+
+	return integer
+}
+
 func nativeBoolToBooleanObject(input bool) *object.Boolean {
 	if input {
 		return TRUE
@@ -303,7 +320,7 @@ func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 	}
 
 	value := right.(*object.Integer).Value
-	return &object.Integer{Value: -value}
+	return createInteger(-value)
 }
 
 func evalInfixExpression(operator string, left, right object.Object) object.Object {

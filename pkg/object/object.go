@@ -29,10 +29,11 @@ type Object interface {
 	Inspect() string
 }
 
-// TODO - build cache for hashes
 type Hashable interface {
 	HashKey() HashKey
 }
+
+var stringHashCache = map[string]HashKey{}
 
 type BuiltinFunction func(args ...Object) Object
 
@@ -116,10 +117,17 @@ func (s *String) Inspect() string {
 }
 
 func (s *String) HashKey() HashKey {
+	if key, ok := stringHashCache[s.Value]; ok {
+		return key
+	}
+
 	h := fnv.New64a()
 	h.Write([]byte(s.Value))
 
-	return HashKey{Type: s.Type(), Value: h.Sum64()}
+	key := HashKey{Type: s.Type(), Value: h.Sum64()}
+	stringHashCache[s.Value] = key
+
+	return key
 }
 
 // Array
@@ -147,7 +155,6 @@ func (ao *Array) Inspect() string {
 }
 
 // Map
-
 type Map struct {
 	Pairs map[HashKey]HashPair
 }
