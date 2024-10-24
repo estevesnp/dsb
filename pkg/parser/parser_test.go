@@ -152,6 +152,35 @@ func TestIdentifierExpressions(t *testing.T) {
 	}
 }
 
+func TestNullLiteralExpression(t *testing.T) {
+	input := "null;"
+
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+
+	checkParserErrors(t, p)
+
+	if n := len(program.Statements); n != 1 {
+		t.Fatalf("program.Statements doesn't have 1 statement, got %d", n)
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not *ast.ExpressionStatement. got %T", program.Statements[0])
+	}
+
+	null, ok := stmt.Expression.(*ast.NullLiteral)
+	if !ok {
+		t.Fatalf("stmt.Expression is not *ast.NullLiteral. got %T", stmt.Expression)
+	}
+
+	if null.Token.Literal != "null" {
+		t.Fatalf("null token has wrong literal")
+	}
+}
+
 func TestIntegerLiteralExpressions(t *testing.T) {
 	input := "5;"
 

@@ -20,9 +20,16 @@ func Print(args ...object.Object) object.Object {
 	return NULL
 }
 
+func TypeOf(args ...object.Object) object.Object {
+	if err := validateLength(1, args); err != nil {
+		return err
+	}
+	return &object.String{Value: string(args[0].Type())}
+}
+
 func Len(args ...object.Object) object.Object {
-	if n := len(args); n != 1 {
-		return newError("wrong number of arguments: expected 1, got %d", n)
+	if err := validateLength(1, args); err != nil {
+		return err
 	}
 
 	switch arg := args[0].(type) {
@@ -38,8 +45,8 @@ func Len(args ...object.Object) object.Object {
 }
 
 func First(args ...object.Object) object.Object {
-	if n := len(args); n != 1 {
-		return newError("wrong number of arguments: expected 1, got %d", n)
+	if err := validateLength(1, args); err != nil {
+		return err
 	}
 
 	arr, ok := args[0].(*object.Array)
@@ -55,8 +62,8 @@ func First(args ...object.Object) object.Object {
 }
 
 func Last(args ...object.Object) object.Object {
-	if n := len(args); n != 1 {
-		return newError("wrong number of arguments: expected 1, got %d", n)
+	if err := validateLength(1, args); err != nil {
+		return err
 	}
 
 	arr, ok := args[0].(*object.Array)
@@ -74,8 +81,8 @@ func Last(args ...object.Object) object.Object {
 }
 
 func Tail(args ...object.Object) object.Object {
-	if n := len(args); n != 1 {
-		return newError("wrong number of arguments: expected 1, got %d", n)
+	if err := validateLength(1, args); err != nil {
+		return err
 	}
 
 	arr, ok := args[0].(*object.Array)
@@ -117,4 +124,11 @@ func Push(args ...object.Object) object.Object {
 
 func notSupported(name string, obj object.Object) *object.Error {
 	return newError("argument to `%s` not supported, got %s", name, obj.Type())
+}
+
+func validateLength(length int, args []object.Object) *object.Error {
+	if n := len(args); n != length {
+		return newError("wrong number of arguments: expected 1, got %d", n)
+	}
+	return nil
 }

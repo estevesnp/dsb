@@ -27,7 +27,10 @@ func Start(reader io.Reader) error {
 
 	env := object.NewEnvironment()
 
-	evaluator.Eval(program, env)
+	res := evaluator.Eval(program, env)
+	if err, ok := res.(*object.Error); ok {
+		return fmt.Errorf("error evaluating the program: %s", err.Message)
+	}
 
 	return nil
 }

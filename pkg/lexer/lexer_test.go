@@ -41,6 +41,8 @@ if (5 < 10) {
 
 {"foo": "bar"}
 
+null
+
 !`
 
 	tests := []struct {
@@ -162,6 +164,8 @@ if (5 < 10) {
 		{token.COLON, ":"},
 		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
+
+		{token.NULL, "null"},
 
 		{token.BANG, "!"},
 		{token.EOF, ""},

@@ -1,12 +1,24 @@
 package evaluator
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/estevesnp/dsb/pkg/lexer"
 	"github.com/estevesnp/dsb/pkg/object"
 	"github.com/estevesnp/dsb/pkg/parser"
 )
+
+func TestEvalNull(t *testing.T) {
+	tests := []string{
+		"null",
+		"fn(){}()",
+		"let func = fn(){}; func()",
+	}
+	for _, input := range tests {
+		testNullObject(t, testEval(input))
+	}
+}
 
 func TestEvalIntegerExpression(t *testing.T) {
 	tests := []struct {
@@ -28,6 +40,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 		{"3 * 3 * 3 + 10", 37},
 		{"3 * (3 * 3) + 10", 37},
 		{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
+		{"let x = 10", 10},
 	}
 
 	for _, tt := range tests {
@@ -322,6 +335,11 @@ func TestEvalBooleanExpression(t *testing.T) {
 		{"(1 < 2) == false", false},
 		{"(1 > 2) == true", false},
 		{"(1 > 2) == false", true},
+		{"null == null", true},
+		{"null != null", false},
+		{"null == 5", false},
+		{"null != 5", true},
+		{"null == fn(){}()", true},
 	}
 
 	for _, tt := range tests {
@@ -596,42 +614,50 @@ func TestBuiltinFunctions(t *testing.T) {
 		{"print(1)", nil},
 		{"print(1, 2, 3)", nil},
 
+		{"typeOf(1)", "INTEGER"},
+		{`typeOf("")`, "STRING"},
+		{"typeOf(true)", "BOOLEAN"},
+		{"typeOf(null)", "NULL"},
+		{"typeOf([])", "ARRAY"},
+		{"typeOf({})", "MAP"},
+		{"typeOf()", errors.New("wrong number of arguments: expected 1, got 0")},
+
 		{`len("")`, 0},
 		{`len("four")`, 4},
 		{`len("hello world")`, 11},
 		{"len([])", 0},
 		{"len([1, 2, 3])", 3},
-		{`len(1)`, "argument to `len` not supported, got INTEGER"},
-		{`len()`, "wrong number of arguments: expected 1, got 0"},
-		{`len("one", "two")`, "wrong number of arguments: expected 1, got 2"},
+		{`len(1)`, errors.New("argument to `len` not supported, got INTEGER")},
+		{`len()`, errors.New("wrong number of arguments: expected 1, got 0")},
+		{`len("one", "two")`, errors.New("wrong number of arguments: expected 1, got 2")},
 
 		{"first([])", nil},
 		{"first([1])", 1},
 		{"first([1, 2, 3])", 1},
-		{"first(0)", "argument to `first` not supported, got INTEGER"},
-		{"first()", "wrong number of arguments: expected 1, got 0"},
-		{"first([], [])", "wrong number of arguments: expected 1, got 2"},
+		{"first(0)", errors.New("argument to `first` not supported, got INTEGER")},
+		{"first()", errors.New("wrong number of arguments: expected 1, got 0")},
+		{"first([], [])", errors.New("wrong number of arguments: expected 1, got 2")},
 
 		{"last([])", nil},
 		{"last([1])", 1},
 		{"last([1, 2, 3])", 3},
-		{"last(0)", "argument to `last` not supported, got INTEGER"},
-		{"last()", "wrong number of arguments: expected 1, got 0"},
-		{"last([], [])", "wrong number of arguments: expected 1, got 2"},
+		{"last(0)", errors.New("argument to `last` not supported, got INTEGER")},
+		{"last()", errors.New("wrong number of arguments: expected 1, got 0")},
+		{"last([], [])", errors.New("wrong number of arguments: expected 1, got 2")},
 
 		{"tail([])", nil},
 		{"tail([1])", []int{}},
 		{"tail([1, 2, 3])", []int{2, 3}},
-		{"tail(0)", "argument to `tail` not supported, got INTEGER"},
-		{"tail()", "wrong number of arguments: expected 1, got 0"},
-		{"tail([], [])", "wrong number of arguments: expected 1, got 2"},
+		{"tail(0)", errors.New("argument to `tail` not supported, got INTEGER")},
+		{"tail()", errors.New("wrong number of arguments: expected 1, got 0")},
+		{"tail([], [])", errors.New("wrong number of arguments: expected 1, got 2")},
 
 		{"push([], 1)", []int{1}},
 		{"push([1, 2], 3)", []int{1, 2, 3}},
 		{"push([1, 2], 3, 4, 5)", []int{1, 2, 3, 4, 5}},
-		{"push(0, 0)", "argument to `push` not supported, got INTEGER"},
-		{"push()", "wrong number of arguments: expected at least 2, got 0"},
-		{"push([])", "wrong number of arguments: expected at least 2, got 1"},
+		{"push(0, 0)", errors.New("argument to `push` not supported, got INTEGER")},
+		{"push()", errors.New("wrong number of arguments: expected at least 2, got 0")},
+		{"push([])", errors.New("wrong number of arguments: expected at least 2, got 1")},
 	}
 
 	for _, tt := range tests {
@@ -641,6 +667,17 @@ func TestBuiltinFunctions(t *testing.T) {
 
 		case int:
 			testIntegerObject(t, evaluated, int64(expected))
+
+		case string:
+			stringObj, ok := evaluated.(*object.String)
+			if !ok {
+				t.Errorf("object is not String. got %T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if stringObj.Value != expected {
+				t.Errorf("wrong string value. want %q, got %q", expected, stringObj.Value)
+			}
 
 		case []int:
 			arrayObj, ok := evaluated.(*object.Array)
@@ -658,15 +695,15 @@ func TestBuiltinFunctions(t *testing.T) {
 				testIntegerObject(t, arrayObj.Elements[idx], int64(exp))
 			}
 
-		case string:
+		case error:
 			errObj, ok := evaluated.(*object.Error)
 			if !ok {
 				t.Errorf("object is not Error. got %T (%+v)", evaluated, evaluated)
 				continue
 			}
 
-			if errObj.Message != expected {
-				t.Errorf("wrong error message. expected %q, got %q", expected, errObj.Message)
+			if errObj.Message != expected.Error() {
+				t.Errorf("wrong error message. expected %q, got %q", expected.Error(), errObj.Message)
 			}
 
 		case nil:

@@ -133,6 +133,21 @@ func (es *ExpressionStatement) String() string {
 	return es.Expression.String()
 }
 
+// NullLiteral
+type NullLiteral struct {
+	Token token.Token
+}
+
+func (nl *NullLiteral) expressionNode() {}
+
+func (nl *NullLiteral) TokenLiteral() string {
+	return nl.Token.Literal
+}
+
+func (nl *NullLiteral) String() string {
+	return nl.Token.Literal
+}
+
 // IntegerLiteral
 type IntegerLiteral struct {
 	Token token.Token

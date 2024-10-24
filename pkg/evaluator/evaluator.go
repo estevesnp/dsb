@@ -16,12 +16,13 @@ var (
 )
 
 var builtins = map[string]*object.Builtin{
-	"print": {Fn: Print},
-	"len":   {Fn: Len},
-	"first": {Fn: First},
-	"last":  {Fn: Last},
-	"tail":  {Fn: Tail},
-	"push":  {Fn: Push},
+	"print":  {Fn: Print},
+	"typeOf": {Fn: TypeOf},
+	"len":    {Fn: Len},
+	"first":  {Fn: First},
+	"last":   {Fn: Last},
+	"tail":   {Fn: Tail},
+	"push":   {Fn: Push},
 }
 
 func Eval(node ast.Node, env *object.Environment) object.Object {
@@ -51,8 +52,12 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return val
 		}
 		env.Set(node.Name.Value, val)
+		return val
 
 	// Expressions
+
+	case *ast.NullLiteral:
+		return NULL
 
 	case *ast.IntegerLiteral:
 		return createInteger(node.Value)
@@ -133,7 +138,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return applyFunction(function, args)
 	}
 
-	return nil
+	return NULL
 }
 
 func evalProgram(stmts []ast.Statement, env *object.Environment) object.Object {
@@ -154,7 +159,7 @@ func evalProgram(stmts []ast.Statement, env *object.Environment) object.Object {
 }
 
 func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
-	var result object.Object
+	var result object.Object = NULL
 
 	for _, statement := range block.Statements {
 		result = Eval(statement, env)

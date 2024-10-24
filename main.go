@@ -33,6 +33,7 @@ func startREPL() {
 func startInterpreter(reader io.Reader) {
 	if err := interpreter.Start(reader); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
 }
 
