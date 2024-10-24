@@ -1,5 +1,5 @@
 # Change these variables as necessary.
-main_package_path = ./cmd/repl
+main_package_path = .
 binary_name = dsb
 
 # ==================================================================================== #
