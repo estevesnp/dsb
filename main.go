@@ -10,30 +10,48 @@ import (
 )
 
 func main() {
-	if len(os.Args) == 1 {
-		startRepl()
-		return
-	}
+	switch {
 
-	for _, arg := range os.Args[1:] {
-		file, err := os.Open(arg)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error opening file %q: %v", arg, err)
-			os.Exit(1)
+	case len(os.Args) == 1 && inputIsPiped():
+		startInterpreter(os.Stdin)
+
+	case len(os.Args) == 1:
+		startREPL()
+
+	default:
+		for _, arg := range os.Args[1:] {
+			processFile(arg)
 		}
-
-		startInterpreter(file)
 	}
 }
 
-func startRepl() {
+func startREPL() {
 	fmt.Print("this is the Domain Specific Bullshit REPL, have fun\n\n")
 	repl.Start(os.Stdin, os.Stdout)
 }
 
 func startInterpreter(reader io.Reader) {
-	err := interpreter.Start(reader)
-	if err != nil {
+	if err := interpreter.Start(reader); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
+}
+
+func inputIsPiped() bool {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error checking stdin: %v\n", err)
+		return false
+	}
+
+	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+func processFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error opening file %q: %v", fileName, err)
+	}
+	defer file.Close()
+
+	startInterpreter(file)
 }
