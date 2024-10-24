@@ -19,6 +19,7 @@ const (
 	INTEGER_OBJ      = "INTEGER"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	STRING_OBJ       = "STRING"
+	ARRAY_OBJ        = "ARRAY"
 )
 
 type Object interface {
@@ -89,6 +90,30 @@ func (s *String) Type() ObjectType {
 
 func (s *String) Inspect() string {
 	return s.Value
+}
+
+// Array
+type Array struct {
+	Elements []Object
+}
+
+func (ao *Array) Type() ObjectType {
+	return ARRAY_OBJ
+}
+
+func (ao *Array) Inspect() string {
+	var out bytes.Buffer
+
+	elements := make([]string, len(ao.Elements))
+	for idx, el := range ao.Elements {
+		elements[idx] = el.Inspect()
+	}
+
+	out.WriteString("[")
+	out.WriteString(strings.Join(elements, ", "))
+	out.WriteString("]")
+
+	return out.String()
 }
 
 // ReturnValue

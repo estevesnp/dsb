@@ -81,6 +81,83 @@ func TestStringConcatenation(t *testing.T) {
 	}
 }
 
+func TestArrayLiterals(t *testing.T) {
+	input := "[1, 2 * 2, 3 + 3]"
+
+	evaluated := testEval(input)
+	arr, ok := evaluated.(*object.Array)
+	if !ok {
+		t.Fatalf("object is not Array. got %T (%+v)", evaluated, evaluated)
+	}
+
+	if n := len(arr.Elements); n != 3 {
+		t.Fatalf("Array has wrong number of elements. got %d", n)
+	}
+
+	testIntegerObject(t, arr.Elements[0], 1)
+	testIntegerObject(t, arr.Elements[1], 4)
+	testIntegerObject(t, arr.Elements[2], 6)
+}
+
+func TestArrayIndexExpressions(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected any
+	}{
+		{
+			"[1, 2, 3][0]",
+			1,
+		},
+		{
+			"[1, 2, 3][1]",
+			2,
+		},
+		{
+			"[1, 2, 3][2]",
+			3,
+		},
+		{
+			"let i = 0; [1][i]",
+			1,
+		},
+
+		{
+			"[1, 2, 3][1 + 1]",
+			3,
+		},
+		{
+			"let myArray = [1, 2, 3]; myArray[2];",
+			3,
+		},
+		{
+			"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+			6,
+		},
+		{
+			"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[1];",
+			2,
+		},
+		{
+			"[1, 2, 3][3]",
+			nil,
+		},
+		{
+			"[1, 2, 3][-1]",
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		evaluated := testEval(tt.input)
+		integer, ok := tt.expected.(int)
+		if ok {
+			testIntegerObject(t, evaluated, int64(integer))
+		} else {
+			testNullObject(t, evaluated)
+		}
+	}
+}
+
 func testNullObject(t *testing.T, obj object.Object) bool {
 	if obj != NULL {
 		t.Errorf("object is not NULL. got %T", obj)
@@ -392,11 +469,46 @@ func TestBuiltinFunctions(t *testing.T) {
 		input    string
 		expected any
 	}{
+		{"print()", nil},
+		{"print(1)", nil},
+		{"print(1, 2, 3)", nil},
+
 		{`len("")`, 0},
 		{`len("four")`, 4},
 		{`len("hello world")`, 11},
+		{"len([])", 0},
+		{"len([1, 2, 3])", 3},
 		{`len(1)`, "argument to `len` not supported, got INTEGER"},
+		{`len()`, "wrong number of arguments: expected 1, got 0"},
 		{`len("one", "two")`, "wrong number of arguments: expected 1, got 2"},
+
+		{"first([])", nil},
+		{"first([1])", 1},
+		{"first([1, 2, 3])", 1},
+		{"first(0)", "argument to `first` not supported, got INTEGER"},
+		{"first()", "wrong number of arguments: expected 1, got 0"},
+		{"first([], [])", "wrong number of arguments: expected 1, got 2"},
+
+		{"last([])", nil},
+		{"last([1])", 1},
+		{"last([1, 2, 3])", 3},
+		{"last(0)", "argument to `last` not supported, got INTEGER"},
+		{"last()", "wrong number of arguments: expected 1, got 0"},
+		{"last([], [])", "wrong number of arguments: expected 1, got 2"},
+
+		{"tail([])", nil},
+		{"tail([1])", []int{}},
+		{"tail([1, 2, 3])", []int{2, 3}},
+		{"tail(0)", "argument to `tail` not supported, got INTEGER"},
+		{"tail()", "wrong number of arguments: expected 1, got 0"},
+		{"tail([], [])", "wrong number of arguments: expected 1, got 2"},
+
+		{"push([], 1)", []int{1}},
+		{"push([1, 2], 3)", []int{1, 2, 3}},
+		{"push([1, 2], 3, 4, 5)", []int{1, 2, 3, 4, 5}},
+		{"push(0, 0)", "argument to `push` not supported, got INTEGER"},
+		{"push()", "wrong number of arguments: expected at least 2, got 0"},
+		{"push([])", "wrong number of arguments: expected at least 2, got 1"},
 	}
 
 	for _, tt := range tests {
@@ -406,6 +518,22 @@ func TestBuiltinFunctions(t *testing.T) {
 
 		case int:
 			testIntegerObject(t, evaluated, int64(expected))
+
+		case []int:
+			arrayObj, ok := evaluated.(*object.Array)
+			if !ok {
+				t.Errorf("object is not Array. got %T (%+v)", evaluated, evaluated)
+				continue
+			}
+
+			if len(arrayObj.Elements) != len(expected) {
+				t.Errorf("Array has wrong number of elements. wanted %d, got %d", len(expected), len(arrayObj.Elements))
+				continue
+			}
+
+			for idx, exp := range expected {
+				testIntegerObject(t, arrayObj.Elements[idx], int64(exp))
+			}
 
 		case string:
 			errObj, ok := evaluated.(*object.Error)
@@ -417,6 +545,10 @@ func TestBuiltinFunctions(t *testing.T) {
 			if errObj.Message != expected {
 				t.Errorf("wrong error message. expected %q, got %q", expected, errObj.Message)
 			}
+
+		case nil:
+			testNullObject(t, evaluated)
 		}
+
 	}
 }
