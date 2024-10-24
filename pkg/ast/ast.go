@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/estevesnp/dsb/pkg/token"
@@ -187,6 +188,33 @@ func (al *ArrayLiteral) String() string {
 	out.WriteString("[")
 	out.WriteString(strings.Join(elements, ", "))
 	out.WriteString("]")
+
+	return out.String()
+}
+
+// MapLiteral
+type MapLiteral struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (ml *MapLiteral) expressionNode() {}
+
+func (ml *MapLiteral) TokenLiteral() string {
+	return ml.Token.Literal
+}
+
+func (ml *MapLiteral) String() string {
+	var out bytes.Buffer
+
+	pairs := make([]string, 0, len(ml.Pairs))
+	for key, value := range ml.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s:%s", key.String(), value.String()))
+	}
+
+	out.WriteString("{")
+	out.WriteString(strings.Join(pairs, ", "))
+	out.WriteString("}")
 
 	return out.String()
 }
