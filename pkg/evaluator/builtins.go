@@ -6,8 +6,6 @@ import (
 	"github.com/estevesnp/dsb/pkg/object"
 )
 
-// TODO - add map/filter/reduce/iterator for arrays
-
 func Print(args ...object.Object) object.Object {
 	arguments := make([]any, len(args))
 

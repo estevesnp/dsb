@@ -22,6 +22,7 @@ const (
 	STRING_OBJ       = "STRING"
 	ARRAY_OBJ        = "ARRAY"
 	MAP_OBJ          = "MAP"
+	QUOTE_OBJ        = "QUOTE"
 )
 
 type Object interface {
@@ -240,4 +241,17 @@ func (b *Builtin) Type() ObjectType {
 
 func (b *Builtin) Inspect() string {
 	return "builtin function"
+}
+
+// Quote
+type Quote struct {
+	Node ast.Node
+}
+
+func (q *Quote) Type() ObjectType {
+	return QUOTE_OBJ
+}
+
+func (q *Quote) Inspect() string {
+	return fmt.Sprintf("QUOTE(%s)", q.Node.String())
 }
