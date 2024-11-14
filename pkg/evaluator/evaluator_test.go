@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/estevesnp/dsb/pkg/ast"
 	"github.com/estevesnp/dsb/pkg/lexer"
 	"github.com/estevesnp/dsb/pkg/object"
 	"github.com/estevesnp/dsb/pkg/parser"
@@ -711,4 +712,64 @@ func TestBuiltinFunctions(t *testing.T) {
 		}
 
 	}
+}
+
+func TestDefineMacros(t *testing.T) {
+	input := `
+let number = 1;
+let function = fn(x, y) { x + y };
+let myMacro = macro(x, y) { x + y; };`
+
+	env := object.NewEnvironment()
+	program := testParseProgram(input)
+
+	DefineMacros(program, env)
+
+	if n := len(program.Statements); n != 2 {
+		t.Fatalf("wrong number of statements. wanted %d, got %d", 2, n)
+	}
+
+	_, ok := env.Get("number")
+	if ok {
+		t.Fatalf("number should not be defined")
+	}
+
+	_, ok = env.Get("function")
+	if ok {
+		t.Fatalf("function should not be defined")
+	}
+
+	obj, ok := env.Get("myMacro")
+	if !ok {
+		t.Fatalf("macro not in environment")
+	}
+
+	macro, ok := obj.(*object.Macro)
+	if !ok {
+		t.Fatalf("obj is not *object.Macro. got %T (%+v)", obj, obj)
+	}
+
+	if n := len(macro.Parameters); n != 2 {
+		t.Fatalf("wrong numver of macro parameters. wanted %d, got %d", 2, n)
+	}
+
+	if str := macro.Parameters[0].String(); str != "x" {
+		t.Fatalf("parameter is not %q, got %q", "x", str)
+	}
+
+	if str := macro.Parameters[1].String(); str != "y" {
+		t.Fatalf("parameter is not %q, got %q", "y", str)
+	}
+
+	expectedBody := "(x + y)"
+
+	if str := macro.Body.String(); str != expectedBody {
+		t.Fatalf("macro.Body is not %q. got %q", expectedBody, str)
+	}
+}
+
+func testParseProgram(input string) *ast.Program {
+	l := lexer.New(input)
+	p := parser.New(l)
+	return p.ParseProgram()
 }

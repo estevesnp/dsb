@@ -43,6 +43,8 @@ if (5 < 10) {
 
 null
 
+macro(x, y) { x + y; };
+
 !`
 
 	tests := []struct {
@@ -166,6 +168,20 @@ null
 		{token.RBRACE, "}"},
 
 		{token.NULL, "null"},
+
+		{token.MACRO, "macro"},
+		{token.LPAREN, "("},
+		{token.IDENT, "x"},
+		{token.COMMA, ","},
+		{token.IDENT, "y"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.IDENT, "x"},
+		{token.PLUS, "+"},
+		{token.IDENT, "y"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.SEMICOLON, ";"},
 
 		{token.BANG, "!"},
 		{token.EOF, ""},
